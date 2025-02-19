@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package service.v1;
+option go_package = "github.com/dhiaayachi/llm-fabric/proto/gen/service";
+
+
+message AskVoteRequest {
+  string id = 1;
+}
+message AskVoteResponse{
+  string id = 1;
+  bool granted = 2;
+  string leader = 3;
+}
+
+message AskHealthRequest {
+  string id = 1;
+  string leader = 2;
+}
+message AskHealthResponse{
+  bool ok = 1;
+}
+
+service LockyService{
+  rpc AskVote(AskVoteRequest) returns (AskVoteResponse) {
+  }
+  rpc AskHealth(AskHealthRequest) returns (AskHealthResponse){}
+}

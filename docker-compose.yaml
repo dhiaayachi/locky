@@ -1,0 +1,45 @@
+services:
+  locky1:
+    image: locky1
+    restart: unless-stopped
+    build:
+      dockerfile: ./Dockerfile
+    environment:
+      - ADDR=:8080
+      - ID=1
+      - SERVERS=locky1:8080;1,locky2:8080;2,locky3:8080;3
+    networks:
+      - locky-net
+    ports:
+      - "8080/tcp"
+  locky2:
+    image: locky2
+    restart: unless-stopped
+    build:
+      dockerfile: ./Dockerfile
+    environment:
+      - ADDR=:8080
+      - ID=2
+      - SERVERS=locky1:8080;1,locky2:8080;2,locky3:8080;3
+    networks:
+      - locky-net
+    ports:
+      - "8080/tcp"
+  locky3:
+    image: locky3
+    restart: unless-stopped
+    build:
+      dockerfile: ./Dockerfile
+    environment:
+      - ADDR=:8080
+      - ID=3
+      - SERVERS=locky1:8080;1,locky2:8080;2,locky3:8080;3
+    networks:
+      - locky-net
+    ports:
+      - "8080/tcp"
+
+networks:
+  locky-net:
+    driver: bridge
+    enable_ipv6: false
