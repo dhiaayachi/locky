@@ -40,7 +40,10 @@ func main() {
 	})
 	logger.SetLevel(logrus.InfoLevel)
 
-	l := NewLocky(context.Background(), addr, servers, Server{addr, id}, logger)
+	l, err := NewLocky(context.Background(), addr, servers, Server{addr, id}, logger)
+	if err != nil {
+		logger.Fatal(err)
+	}
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
@@ -60,8 +63,9 @@ func main() {
 			cancel()
 			return
 		case <-ticker.C:
-			st := l.GetState()
-			fmt.Printf("\r%s Leader:%s %d\n", l.localServer.id, st.leader, st.state)
+			//TODO: implement state checking
+			//st := l.GetState()
+			//fmt.Printf("\r%s Leader:%s %d\n", l.localServer.id, st.leader, st.state)
 		}
 	}
 
