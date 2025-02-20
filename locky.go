@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/rand"
 	"net"
+	"sync/atomic"
 	"time"
 
 	"github.com/dhiaayachi/locky/proto/gen/service/v1"
@@ -32,6 +33,8 @@ type Locky struct {
 	servers     map[string]Server
 	localServer Server
 	logger      *logrus.Logger
+	state       atomic.Pointer[State]
+	stateCh     chan State
 }
 
 type Server struct {
@@ -130,8 +133,24 @@ func (l *Locky) GetLeader() string {
 	panic("not implemented")
 }
 
-func (l *Locky) runState(ctx context.Context) {
+func (l *Locky) GetState() *State {
+	state := l.state.Load()
+	l.logger.Tracef("GetState: leader=%s, state=%d", state.leader, state.state)
+	return state
+}
 
+func (l *Locky) runState(ctx context.Context) {
+	l.logger.Trace("runState: starting state loop")
+	for {
+		select {
+		case <-ctx.Done():
+			l.logger.Debug("runState: context done, exiting loop")
+			return
+		case s := <-l.stateCh:
+			l.logger.Debugf("runState: updating state to leader=%s, state=%d", s.leader, s.state)
+			l.state.Store(&s)
+		}
+	}
 }
 
 func (l *Locky) run(ctx context.Context) {
@@ -139,8 +158,7 @@ func (l *Locky) run(ctx context.Context) {
 	for {
 		select {
 		default:
-			//TODO: add state
-			st := State{}
+			st := l.GetState()
 			l.logger.Tracef("run: current state: leader=%s, state=%d", st.leader, st.state)
 			switch st.state {
 			case StateCandidate:
@@ -212,5 +230,7 @@ func (l *Locky) askHealth(s Server, ctx context.Context) (*service.AskHealthResp
 }
 
 func (l *Locky) isLeader() bool {
-	panic("not implemented")
+	isLeader := l.state.Load().state == StateLeader
+	l.logger.Tracef("isLeader: %v", isLeader)
+	return isLeader
 }
